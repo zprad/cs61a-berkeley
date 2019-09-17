@@ -8,6 +8,7 @@ from ucb import main, trace
 ##############
 # Eval/Apply #
 ##############
+keywords = ['define']
 
 def scheme_eval(expr, env, _=None): # Optional third argument is ignored
     """Evaluate Scheme expression EXPR in environment ENV.
@@ -24,14 +25,15 @@ def scheme_eval(expr, env, _=None): # Optional third argument is ignored
         else:
             return expr
     else:
-        operator = expr.first
-    return 'Your Code Here'
+        operator = scheme_eval(expr.first, env)
+        operands = expr.second.map(lambda expr: scheme_eval(expr, env))
+        return scheme_apply(operator, operands, env)
 
 
 def scheme_apply(procedure, args, env):
     """Apply Scheme PROCEDURE to argument values ARGS (a Scheme list) in
     environment ENV."""
-    return 'Your Code Here'
+    return procedure.apply(args, env)
 
 
 
@@ -45,6 +47,8 @@ class Frame(object):
     def __init__(self, parent):
         """An empty frame with parent frame PARENT (which may be None)."""
         "Your Code Here"
+        self.parent = parent
+        self.bindings = {}
 
     def __repr__(self):
         if self.parent is None:
@@ -54,11 +58,20 @@ class Frame(object):
 
     def define(self, symbol, value):
         """Define Scheme SYMBOL to have VALUE."""
-
-        return 'Your Code Here'
+        self.bindings[symbol] = value
 
     # BEGIN PROBLEM 2/3
     "*** YOUR CODE HERE ***"
+    def lookup(self, name):
+        if name in self.bindings:
+            return self.bindings[name]
+        else:
+            if self.parent:
+                return self.parent.lookup(name)
+            else:
+                return 'SchemeError'
+                # raise NameError("name '{0}' is not defined".format(name))
+
     # END PROBLEM 2/3
 
 ##############
@@ -93,6 +106,17 @@ class BuiltinProcedure(Procedure):
         """
         # BEGIN PROBLEM 2
         "*** YOUR CODE HERE ***"
+        # def scheme_list_to_array(x):
+        #     result = []
+        #     while x is not nil:
+        #         if isinstance(x.first, Pair):
+        #             result.append(scheme_list_to_array(x.first))
+        #         else:
+        #             result.append(x.first)
+        #         x = x.second
+        # vals = scheme_list_to_array(args)
+        # self.fn(vals)
+        scheme_reduce(self.fn, args, env)
         # END PROBLEM 2
 
 
@@ -258,6 +282,13 @@ def scheme_reduce(fn, s, env):
         s = s.second
     return value
 
+def scheme_define(s, env):
+    # todo: check type
+    name, exp = s.first, s.second
+    value = scheme_eval(exp, env)
+    env.define(name, value)
+    return name
+
 ################
 # Input/Output #
 ################
@@ -347,6 +378,7 @@ def create_global_frame():
                BuiltinProcedure(scheme_filter, True, 'filter'))
     env.define('reduce',
                BuiltinProcedure(scheme_reduce, True, 'reduce'))
+    env.define('define', BuiltinProcedure(scheme_define, True, 'define'))
     env.define('undefined', None)
     add_builtins(env, BUILTINS)
     return env

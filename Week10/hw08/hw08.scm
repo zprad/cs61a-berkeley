@@ -4,6 +4,8 @@
     (append (reverse (cdr lst)) (cons (car lst) nil))
   )
 )
+
+; to do
 (define (longest-increasing-subsequence lst)
     'YOUR-CODE-HERE
 )
